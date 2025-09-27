@@ -11,13 +11,12 @@
             font-family: 'Rye', cursive;
             background-color: #f5deb3; /* Parchment */
             background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+            color: #4a2c12;
         }
-        .font-bang {
-            font-family: 'IM Fell English SC', serif;
-        }
+        .font-bang { font-family: 'IM Fell English SC', serif; }
         .card {
-            border: 2px solid #8B4513; /* SaddleBrown */
-            background-color: #F5F5DC; /* Beige */
+            border: 2px solid #8B4513;
+            background-color: #F5F5DC;
             border-radius: 10px;
             box-shadow: 3px 3px 5px rgba(0,0,0,0.5);
             transition: transform 0.2s, box-shadow 0.2s;
@@ -25,23 +24,20 @@
             overflow: hidden;
             width: 100px;
             height: 140px;
+            cursor: pointer;
         }
-        .card:hover {
-            transform: translateY(-10px) scale(1.05);
-            box-shadow: 5px 10px 15px rgba(0,0,0,0.5);
-        }
+        .card:hover { transform: translateY(-10px) scale(1.05); box-shadow: 5px 10px 15px rgba(0,0,0,0.5); }
         .player-area {
             border: 3px solid #8B4513;
-            background-color: rgba(210, 180, 140, 0.7); /* Tan with transparency */
+            background-color: rgba(210, 180, 140, 0.7);
             border-radius: 10px;
             padding: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.5) inset;
             position: relative;
+            min-height: 150px;
         }
-        .player-area.active-player {
-            border-color: #FFD700; /* Gold */
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8) inset, 0 0 15px rgba(255, 215, 0, 0.8);
-        }
+        .player-area.active-player { border-color: #FFD700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.8) inset, 0 0 15px rgba(255, 215, 0, 0.8); }
+        .player-area.targetable { border-color: #ff4500; cursor: pointer; transform: scale(1.03); }
         .bullet {
             width: 20px;
             height: 20px;
@@ -50,100 +46,23 @@
             background-repeat: no-repeat;
             background-position: center;
         }
-        .game-log {
-            background-color: rgba(0,0,0,0.7);
-            color: white;
-            border-radius: 5px;
-            padding: 10px;
-            height: 150px;
-            overflow-y: scroll;
-            border: 2px solid #4a2c12;
-            font-family: monospace;
-            font-size: 0.8rem;
-        }
-         /* Modal styles */
         .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); z-index: 50;
+            display: flex; align-items: center; justify-content: center;
         }
         .modal-content {
-            background-color: #f5deb3;
-            border: 5px solid #8B4513;
-            border-radius: 15px;
-            padding: 2rem;
-            z-index: 60;
-            box-shadow: 0 0 30px rgba(0,0,0,0.7);
-            text-align: center;
-            max-width: 90%;
-            width: 500px;
+            background-color: #f5deb3; border: 5px solid #8B4513;
+            border-radius: 15px; padding: 2rem; z-index: 60;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7); text-align: center;
+            max-width: 90%; width: 500px;
         }
+        .player-hand { min-height: 150px; }
     </style>
 </head>
-<body class="bg-tan-100 text-gray-800">
+<body class="p-4">
 
-    <div id="game-container" class="container mx-auto p-4 max-w-7xl hidden">
-        
-        <!-- Other Players -->
-        <div id="other-players-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
-            <!-- Other player templates will be inserted here -->
-        </div>
-
-        <!-- Central Table -->
-        <div class="flex justify-center items-center space-x-8 my-8">
-            <div>
-                <div id="deck-pile" class="card flex items-center justify-center text-center font-bold text-lg cursor-pointer transform hover:scale-105 transition-transform">
-                    BANG!<br/><span id="deck-count" class="text-sm"></span>
-                </div>
-                <p class="text-center mt-2">Deck</p>
-            </div>
-            <div>
-                <div id="discard-pile" class="card flex items-center justify-center text-center">
-                   <!-- Last discarded card will be shown here -->
-                </div>
-                 <p class="text-center mt-2">Discard</p>
-            </div>
-            <div id="game-log-container" class="w-1/2">
-                 <p class="text-center mb-2">Game Log</p>
-                <div id="game-log" class="game-log"></div>
-            </div>
-        </div>
-
-        <!-- Current Player -->
-        <div id="current-player-area" class="fixed bottom-0 left-0 right-0 bg-black bg-opacity-50 p-4">
-             <div class="player-area" id="main-player-div">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h2 id="player-name" class="text-2xl font-bold">Player Name</h2>
-                        <p id="player-character" class="text-lg font-bang">Character Name</p>
-                        <p id="player-role" class="italic text-sm">Role: Sheriff</p>
-                        <p id="turn-phase-indicator" class="font-bold text-yellow-200 mt-1"></p>
-                    </div>
-                    <div id="player-health" class="flex items-center space-x-1">
-                        <!-- Bullets for health -->
-                    </div>
-                </div>
-                <div class="flex mt-2 space-x-4">
-                    <div id="player-hand-container" class="flex-1 flex space-x-2 items-end h-[160px]">
-                        <!-- Player's cards in hand -->
-                    </div>
-                    <div class="flex flex-col items-center space-y-2">
-                        <button id="end-turn-btn" class="bg-red-800 text-white font-bold py-2 px-4 rounded hover:bg-red-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">End Turn</button>
-                        <p class="text-xs text-white">Your ID: <span id="user-id-display"></span></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Lobby -->
+    <!-- Lobby Screen -->
     <div id="lobby-container" class="container mx-auto p-8 text-center">
         <h1 class="text-6xl font-rye mb-4">Bang! Online</h1>
         <p class="mb-8 font-bang text-xl">The Wild West Card Game</p>
@@ -160,438 +79,418 @@
             <button id="join-game-btn" class="bg-green-800 text-white font-bold py-2 px-4 rounded hover:bg-green-900 transition-colors w-full disabled:opacity-50" disabled>Authenticating...</button>
         </div>
         
-        <div id="lobby-players" class="mt-8 max-w-md mx-auto">
-            <h3 class="text-2xl mb-4">Players in Lobby</h3>
-            <ul id="lobby-player-list" class="list-disc list-inside bg-tan-200 p-4 rounded-lg border-2 border-yellow-700">
+        <div id="lobby-players-container" class="mt-8 max-w-md mx-auto hidden">
+            <h3 class="text-2xl mb-2">Game Lobby: <span id="game-id-display" class="font-mono text-lg bg-black text-white px-2 py-1 rounded"></span></h3>
+            <p class="mb-4">Share the Game ID with your friends!</p>
+            <h4 class="text-xl mb-2">Players</h4>
+            <ul id="lobby-player-list" class="list-none bg-tan-200 p-4 rounded-lg border-2 border-yellow-700">
                 <!-- Player list -->
             </ul>
             <button id="start-game-btn" class="bg-blue-800 text-white font-bold py-2 px-4 rounded hover:bg-blue-900 transition-colors mt-4 hidden">Start Game (Min 4 Players)</button>
         </div>
     </div>
-    
-    <!-- Modals -->
-    <div id="role-modal" class="modal-backdrop hidden">
-        <div class="modal-content">
-            <h2 class="text-3xl font-bang mb-4">Your Role is...</h2>
-            <div id="role-reveal-card" class="w-40 h-60 mx-auto border-4 border-yellow-800 rounded-lg p-4 flex flex-col justify-center items-center bg-beige">
-                <p id="role-name" class="text-4xl"></p>
-                <p id="role-description" class="mt-4 text-sm"></p>
-            </div>
-            <button id="close-role-modal-btn" class="mt-6 bg-yellow-700 text-white font-bold py-2 px-4 rounded hover:bg-yellow-800">Got it!</button>
+
+
+    <!-- Game Screen -->
+    <div id="game-container" class="hidden">
+        <div id="players-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-4">
+            <!-- Player areas will be generated here -->
         </div>
-    </div>
 
-    <div id="target-modal" class="modal-backdrop hidden">
-        <div class="modal-content">
-            <h2 id="target-modal-title" class="text-2xl font-bang mb-4">Select a Target</h2>
-            <div id="target-player-list" class="grid grid-cols-2 gap-4"></div>
-            <button id="cancel-target-btn" class="mt-6 bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600">Cancel</button>
+        <div class="fixed bottom-4 right-4 flex flex-col space-y-2">
+            <button id="end-turn-btn" class="bg-red-800 text-white font-bold py-2 px-4 rounded hover:bg-red-900 transition-colors">End Turn</button>
+            <button id="draw-cards-btn" class="bg-green-800 text-white font-bold py-2 px-4 rounded hover:bg-green-900 transition-colors">Draw 2 Cards</button>
         </div>
-    </div>
-
-    <div id="info-modal" class="modal-backdrop hidden">
-        <div class="modal-content">
-            <p id="info-modal-text" class="text-lg"></p>
-            <button id="close-info-modal-btn" class="mt-6 bg-yellow-700 text-white font-bold py-2 px-4 rounded hover:bg-yellow-800">OK</button>
-        </div>
-    </div>
-
-
-    <script type="module">
-        // Firebase Imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, arrayUnion, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
-
-        // Firebase Config (will be provided by the environment)
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIza...", authDomain: "...", projectId: "..." };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-bang-app';
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const functions = getFunctions(app);
         
-        // --- Cloud Function Stubs ---
-        // These functions will call our secure backend.
-        const startGame = httpsCallable(functions, 'startGame');
-        const performAction = httpsCallable(functions, 'performAction');
+        <!-- Role Reveal Modal -->
+        <div id="role-modal" class="modal-backdrop hidden">
+            <div class="modal-content">
+                <h2 class="text-3xl font-bang mb-4">Your Role is...</h2>
+                <div id="role-reveal-card" class="w-40 h-60 mx-auto border-4 rounded-lg p-4 flex flex-col justify-center items-center bg-beige">
+                    <p id="role-name" class="text-4xl"></p>
+                    <p id="role-description" class="mt-4 text-sm"></p>
+                </div>
+                <button id="close-role-modal-btn" class="mt-6 bg-yellow-700 text-white font-bold py-2 px-4 rounded hover:bg-yellow-800">Got It</button>
+            </div>
+        </div>
 
+        <!-- Info Modal -->
+        <div id="info-modal" class="modal-backdrop hidden">
+             <div class="modal-content">
+                <p id="info-modal-text" class="text-lg"></p>
+                <button id="close-info-modal-btn" class="mt-6 bg-yellow-700 text-white font-bold py-2 px-4 rounded hover:bg-yellow-800">OK</button>
+            </div>
+        </div>
+    </div>
 
-        // Game state variables
-        let userId;
-        let currentGameId = null;
-        let gameState = null;
-        let unsubscribeGame = null;
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // UI Elements
-        const lobbyContainer = document.getElementById('lobby-container');
-        const gameContainer = document.getElementById('game-container');
-        const joinGameBtn = document.getElementById('join-game-btn');
-        const gameIdInput = document.getElementById('game-id-input');
-        const playerNameInput = document.getElementById('player-name-input');
-        const lobbyPlayerList = document.getElementById('lobby-player-list');
-        const startGameBtn = document.getElementById('start-game-btn');
-        const userIdDisplay = document.getElementById('user-id-display');
-        const deckPile = document.getElementById('deck-pile');
+    // --- FIREBASE CONFIG ---
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIza...", authDomain: "...", projectId: "..." };
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-bang-app';
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-        // --- GENERAL UI & MODALS ---
-        function showInfoModal(message) {
-            document.getElementById('info-modal-text').textContent = message;
-            document.getElementById('info-modal').classList.remove('hidden');
+    // --- GLOBAL STATE ---
+    let userId;
+    let currentGameId = null;
+    let gameState = {};
+    let unsubscribeGame = null;
+    let selectedCard = null;
+
+    // --- UI ELEMENTS ---
+    const lobbyContainer = document.getElementById('lobby-container');
+    const gameContainer = document.getElementById('game-container');
+    const joinGameBtn = document.getElementById('join-game-btn');
+    const gameIdInput = document.getElementById('game-id-input');
+    const playerNameInput = document.getElementById('player-name-input');
+    const lobbyPlayersContainer = document.getElementById('lobby-players-container');
+    const lobbyPlayerList = document.getElementById('lobby-player-list');
+    const gameIdDisplay = document.getElementById('game-id-display');
+    const startGameBtn = document.getElementById('start-game-btn');
+    const playersContainer = document.getElementById('players-container');
+    const roleModal = document.getElementById('role-modal');
+    const infoModal = document.getElementById('info-modal');
+
+    // --- MODAL & UTILITY FUNCTIONS ---
+    function showInfoModal(message) {
+        document.getElementById('info-modal-text').textContent = message;
+        infoModal.classList.remove('hidden');
+    }
+    document.getElementById('close-info-modal-btn').addEventListener('click', () => infoModal.classList.add('hidden'));
+    document.getElementById('close-role-modal-btn').addEventListener('click', async () => {
+        roleModal.classList.add('hidden');
+        if (currentGameId) {
+             const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, currentGameId);
+             await updateDoc(gameRef, { [`players.${userId}.roleShown`]: true });
         }
-        document.getElementById('close-info-modal-btn').addEventListener('click', () => {
-            document.getElementById('info-modal').classList.add('hidden');
-        });
-        document.getElementById('close-role-modal-btn').addEventListener('click', () => {
-            document.getElementById('role-modal').classList.add('hidden');
-        });
-         document.getElementById('cancel-target-btn').addEventListener('click', () => {
-            document.getElementById('target-modal').classList.add('hidden');
-        });
+    });
+    
+    function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
 
-        // --- AUTHENTICATION ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                userId = user.uid;
-                userIdDisplay.textContent = userId;
-                console.log("Authenticated with user ID:", userId);
-                joinGameBtn.disabled = false;
-                joinGameBtn.textContent = 'Join / Create Game';
-            } else {
-                signInAnonymously(auth).catch((error) => {
-                    console.error("Anonymous sign-in failed:", error);
-                });
-            }
-        });
+    // --- AUTHENTICATION ---
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            userId = user.uid;
+            joinGameBtn.disabled = false;
+            joinGameBtn.textContent = 'Join / Create Game';
+        } else {
+            signInAnonymously(auth).catch((error) => console.error("Anonymous sign-in failed:", error));
+        }
+    });
 
-        // --- LOBBY LOGIC ---
-        joinGameBtn.addEventListener('click', async () => {
-            const playerName = playerNameInput.value.trim();
-            if (!playerName) {
-                showInfoModal("Please enter a name!");
-                return;
-            }
+    // --- LOBBY LOGIC ---
+    joinGameBtn.addEventListener('click', async () => {
+        const playerName = playerNameInput.value.trim();
+        if (!playerName) {
+            showInfoModal("Please enter a name!");
+            return;
+        }
 
-            let gameId = gameIdInput.value.trim();
-            if (!gameId) {
-                gameId = `game-${Math.random().toString(36).substr(2, 6)}`;
-            }
-            
-            currentGameId = gameId;
-            const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, currentGameId);
-            
-            try {
-                const gameDoc = await getDoc(gameRef);
+        let gameId = gameIdInput.value.trim() || `game-${Math.random().toString(36).substr(2, 6)}`;
+        currentGameId = gameId;
+        const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, currentGameId);
 
+        try {
+            await runTransaction(db, async (transaction) => {
+                const gameDoc = await transaction.get(gameRef);
                 if (!gameDoc.exists()) {
-                    await createNewGame(gameRef, playerName);
+                    const newGame = {
+                        status: 'lobby',
+                        hostId: userId,
+                        players: { [userId]: { name: playerName } },
+                    };
+                    transaction.set(gameRef, newGame);
                 } else {
                     const gameData = gameDoc.data();
-                    if (gameData.status !== 'lobby') {
-                        showInfoModal('This game has already started!');
-                        return;
-                    }
-                    if (Object.keys(gameData.players).length >= 7) {
-                        showInfoModal('This game is full!');
-                        return;
-                    }
-                    const updatePayload = {
-                        [`players.${userId}`]: { name: playerName, status: 'active' }
-                    };
-                    await updateDoc(gameRef, updatePayload);
+                    if (gameData.status !== 'lobby') throw new Error("This game has already started!");
+                    if (Object.keys(gameData.players).length >= 7) throw new Error("This game is full!");
+                    
+                    const updatePayload = { [`players.${userId}`]: { name: playerName } };
+                    transaction.update(gameRef, updatePayload);
                 }
-                subscribeToGame(currentGameId);
-            } catch (error) {
-                console.error("Error joining game: ", error);
-                showInfoModal("Could not join game. See console for details.");
+            });
+            subscribeToGame(currentGameId);
+        } catch (error) {
+            console.error("Error joining game: ", error);
+            showInfoModal(error.message);
+        }
+    });
+    
+    function subscribeToGame(gameId) {
+        if (unsubscribeGame) unsubscribeGame();
+        const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, gameId);
+        unsubscribeGame = onSnapshot(gameRef, (doc) => {
+            if (doc.exists()) {
+                gameState = doc.data();
+                updateUI(gameState);
+            } else {
+                showInfoModal("Game not found or has been deleted.");
+                // Reset UI to main lobby screen
             }
         });
+    }
+
+    function updateUI(state) {
+        if (state.status === 'lobby') {
+            displayLobby(state);
+        } else if (state.status === 'playing') {
+            displayGame(state);
+        }
+    }
+
+    function displayLobby(state) {
+        lobbyContainer.querySelector('div').classList.add('hidden'); // Hide join form
+        lobbyPlayersContainer.classList.remove('hidden');
+        gameContainer.classList.add('hidden');
+        gameIdDisplay.textContent = currentGameId;
+
+        lobbyPlayerList.innerHTML = '';
+        Object.values(state.players).forEach(player => {
+            const li = document.createElement('li');
+            li.textContent = player.name;
+            lobbyPlayerList.appendChild(li);
+        });
+
+        if (userId === state.hostId) {
+            startGameBtn.classList.remove('hidden');
+            const numPlayers = Object.keys(state.players).length;
+            if (numPlayers >= 4) {
+                startGameBtn.disabled = false;
+                startGameBtn.textContent = 'Start Game';
+            } else {
+                startGameBtn.disabled = true;
+                startGameBtn.textContent = `Need ${4 - numPlayers} more player(s)`;
+            }
+        }
+    }
+
+    startGameBtn.addEventListener('click', async () => {
+        const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, currentGameId);
+        // This setup logic should ideally be in a Cloud Function for security,
+        // but for a simple friends game, the host client can do it.
+        const playerIds = Object.keys(gameState.players);
+        const numPlayers = playerIds.length;
         
-        async function createNewGame(gameRef, playerName) {
-            const newGame = {
-                status: 'lobby',
-                hostId: userId,
-                players: {
-                    [userId]: { name: playerName, status: 'active' }
-                },
-                createdAt: new Date(),
+        const rolesToAssign = shuffle([...ROLES[numPlayers]]);
+        const charactersToAssign = shuffle(Object.values(ALL_CHARACTERS)).slice(0, numPlayers);
+        let sheriffIndex = -1;
+
+        let updatedPlayers = {};
+        playerIds.forEach((pid, index) => {
+            const role = rolesToAssign[index];
+            if (role === 'Sheriff') sheriffIndex = index;
+            const character = charactersToAssign[index];
+            const maxHealth = character.health + (role === 'Sheriff' ? 1 : 0);
+            
+            updatedPlayers[pid] = {
+                ...gameState.players[pid],
+                id: pid,
+                role: role,
+                character: character.name,
+                maxHealth: maxHealth,
+                health: maxHealth,
+                hand: [],
+                roleShown: false,
             };
-            await setDoc(gameRef, newGame);
-        }
-
-        function subscribeToGame(gameId) {
-            const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, gameId);
-            unsubscribeGame = onSnapshot(gameRef, (doc) => {
-                if (doc.exists()) {
-                    gameState = doc.data();
-                    updateUI(gameState);
-                } else {
-                    showInfoModal("The game has ended or could not be found.");
-                    resetToLobby();
-                }
-            });
-        }
+        });
         
-        function updateUI(state) {
-            if (state.status === 'lobby') {
-                showLobby(state);
-            } else if (state.status === 'playing' || state.status === 'gameover') {
-                showGame(state);
-            }
-        }
-        
-        function showLobby(state) {
-            lobbyContainer.classList.remove('hidden');
-            gameContainer.classList.add('hidden');
-            
-            lobbyPlayerList.innerHTML = '';
-            const playerIds = Object.keys(state.players);
-            playerIds.forEach(pid => {
-                const player = state.players[pid];
-                const li = document.createElement('li');
-                li.textContent = player.name;
-                if (pid === userId) li.textContent += " (You)";
-                if (pid === state.hostId) li.textContent += " [Host]";
-                lobbyPlayerList.appendChild(li);
-            });
+        let deck = [];
+        Object.entries(ALL_CARDS).forEach(([cardName, cardData]) => {
+            for (let i = 0; i < cardData.count; i++) deck.push({ id: `${cardName}_${i}`, name: cardName });
+        });
+        deck = shuffle(deck);
 
-            if (userId === state.hostId) {
-                startGameBtn.classList.remove('hidden');
-                if (playerIds.length >= 4) {
-                    startGameBtn.disabled = false;
-                    startGameBtn.textContent = 'Start Game';
-                } else {
-                    startGameBtn.disabled = true;
-                    startGameBtn.textContent = `Need ${4 - playerIds.length} more player(s)`;
-                }
-            }
-        }
-        
-        function resetToLobby() {
-            if (unsubscribeGame) unsubscribeGame();
-            unsubscribeGame = null;
-            currentGameId = null;
-            gameState = null;
-            lobbyContainer.classList.remove('hidden');
-            gameContainer.classList.add('hidden');
-            gameIdInput.value = '';
-            lobbyPlayerList.innerHTML = '';
-            startGameBtn.classList.add('hidden');
-        }
-
-        startGameBtn.addEventListener('click', async () => {
-             if (!currentGameId || userId !== gameState.hostId) return;
-             startGameBtn.disabled = true;
-             startGameBtn.textContent = 'Starting...';
-             try {
-                await startGame({ gameId: currentGameId });
-                // The onSnapshot listener will handle the UI update
-             } catch (error) {
-                 console.error("Error starting game:", error);
-                 showInfoModal(`Error starting game: ${error.message}`);
-                 startGameBtn.disabled = false;
-                 startGameBtn.textContent = 'Start Game';
-             }
+        Object.values(updatedPlayers).forEach(player => {
+            for (let i = 0; i < player.health; i++) player.hand.push(deck.pop());
         });
 
-        // --- GAME UI RENDERING ---
-        function showGame(state) {
-            lobbyContainer.classList.add('hidden');
-            gameContainer.classList.remove('hidden');
+        await updateDoc(gameRef, {
+            status: 'playing',
+            players: updatedPlayers,
+            deck: deck,
+            discardPile: [],
+            turnOrder: shuffle(playerIds), // Randomize turn order
+            currentTurnIndex: sheriffIndex, // Or start with sheriff
+        });
+    });
 
-            const myPlayer = state.players[userId];
-            if (!myPlayer) return;
-            
-            if (!myPlayer.roleShown) {
-                showRoleModal(myPlayer.role);
-                // The backend should handle setting this flag
-                performAction({ gameId: currentGameId, action: { type: 'ACKNOWLEDGE_ROLE' }});
-            }
+    function displayGame(state) {
+        lobbyContainer.classList.add('hidden');
+        gameContainer.classList.remove('hidden');
 
-            const isMyTurn = state.turnOrder[state.currentTurnIndex] === userId;
-
-            // Render current player
-            document.getElementById('player-name').textContent = myPlayer.name + (isMyTurn ? ' (Your Turn)' : '');
-            document.getElementById('player-character').textContent = myPlayer.character;
-            document.getElementById('player-role').textContent = `Role: ${myPlayer.role === 'Sheriff' ? 'Sheriff' : '???'}`;
-            document.getElementById('turn-phase-indicator').textContent = isMyTurn ? `Phase: ${myPlayer.turnPhase}` : '';
-            
-            const healthContainer = document.getElementById('player-health');
-            healthContainer.innerHTML = '';
-            for(let i=0; i < myPlayer.maxHealth; i++) {
-                const bulletDiv = document.createElement('div');
-                bulletDiv.className = 'bullet';
-                if (i >= myPlayer.health) bulletDiv.style.opacity = '0.2';
-                healthContainer.appendChild(bulletDiv);
-            }
-
-            // Render player hand
-            const handContainer = document.getElementById('player-hand-container');
-            handContainer.innerHTML = '';
-            myPlayer.hand.forEach(card => {
-                const cardEl = createCardElement(card);
-                cardEl.addEventListener('click', () => onCardClick(card));
-                handContainer.appendChild(cardEl);
-            });
-            
-            // Render other players
-            const otherPlayersContainer = document.getElementById('other-players-container');
-            otherPlayersContainer.innerHTML = '';
-            state.turnOrder.forEach((pid, index) => {
-                if (pid === userId) return;
-                const player = state.players[pid];
-                const playerDiv = document.createElement('div');
-                playerDiv.className = 'player-area';
-                if (index === state.currentTurnIndex) playerDiv.classList.add('active-player');
-
-                playerDiv.innerHTML = `
-                    <h3 class="font-bold text-lg">${player.name}</h3>
-                    <p class="font-bang text-sm">${player.character}</p>
-                    <p class="text-xs">${player.hand.length} cards in hand</p>
-                    <div class="flex mt-1">
-                        ${[...Array(player.maxHealth)].map((_, i) => `<div class="bullet ${i >= player.health ? 'opacity-20' : ''}"></div>`).join('')}
-                    </div>
-                    ${player.role === 'Sheriff' ? '<p class="text-xs text-blue-800 font-bold">Sheriff</p>' : ''}
-                    ${player.status === 'eliminated' ? `<div class="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-red-500 text-3xl font-bold transform -rotate-12">ELIMINATED</div><p class="text-center font-bold mt-2">${player.role}</p>` : ''}
-                `;
-                otherPlayersContainer.appendChild(playerDiv);
-            });
-            
-            document.getElementById('deck-count').textContent = `${state.deck.length} cards`;
-            const discardPileEl = document.getElementById('discard-pile');
-            discardPileEl.innerHTML = '';
-            if (state.discardPile.length > 0) {
-                const topCard = state.discardPile[state.discardPile.length - 1];
-                discardPileEl.appendChild(createCardElement(topCard));
-            }
-            
-            const logEl = document.getElementById('game-log');
-            logEl.innerHTML = state.log.join('<br>');
-            logEl.scrollTop = logEl.scrollHeight;
-
-            document.getElementById('end-turn-btn').disabled = !isMyTurn || myPlayer.turnPhase !== 'PLAY';
-        }
-
-        function createCardElement(card) {
-            const cardData = ALL_CARDS[card.name];
-            const div = document.createElement('div');
-            div.className = 'card flex flex-col justify-between p-1 cursor-pointer';
-            div.innerHTML = `
-                <div class="text-left text-sm font-bold">${card.suit || ''} ${card.value || ''}</div>
-                <div class="text-center font-bang text-md">${card.name}</div>
-                <div class="text-right text-sm font-bold">${card.suit || ''} ${card.value || ''}</div>
-            `;
-            if (cardData.color === 'blue') div.style.borderColor = '#0000FF';
-            return div;
-        }
-        
-        function showRoleModal(role) {
-            const roleData = {
+        const me = state.players[userId];
+        if (me && !me.roleShown) {
+             const roleData = {
                 Sheriff: { color: 'blue', desc: 'Kill all Outlaws and the Renegade.'},
                 Deputy: { color: 'blue', desc: 'Protect the Sheriff! Kill all Outlaws and the Renegade.'},
                 Outlaw: { color: 'red', desc: 'Kill the Sheriff.'},
                 Renegade: { color: 'gray', desc: 'Be the last one standing.'},
             };
-            document.getElementById('role-name').textContent = role;
-            document.getElementById('role-description').textContent = roleData[role].desc;
-            document.getElementById('role-reveal-card').style.borderColor = roleData[role].color;
-            document.getElementById('role-modal').classList.remove('hidden');
+            document.getElementById('role-name').textContent = me.role;
+            document.getElementById('role-description').textContent = roleData[me.role].desc;
+            document.getElementById('role-reveal-card').style.borderColor = roleData[me.role].color;
+            roleModal.classList.remove('hidden');
         }
-        
-        // --- GAME ACTIONS (Client-side triggers) ---
-        deckPile.addEventListener('click', () => {
-            const myPlayer = gameState.players[userId];
-            const isMyTurn = gameState.turnOrder[gameState.currentTurnIndex] === userId;
-            if (isMyTurn && myPlayer.turnPhase === 'DRAW') {
-                performAction({ gameId: currentGameId, action: { type: 'DRAW_CARDS' }});
-            }
+
+        playersContainer.innerHTML = '';
+        state.turnOrder.forEach((pid) => {
+            const player = state.players[pid];
+            const isMe = pid === userId;
+            const isCurrentTurn = state.turnOrder[state.currentTurnIndex] === pid;
+            
+            const playerDiv = document.createElement('div');
+            playerDiv.className = `player-area ${isCurrentTurn ? 'active-player' : ''}`;
+            playerDiv.dataset.playerId = pid;
+
+            playerDiv.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-lg">${player.name} ${isMe ? '(You)' : ''}</h3>
+                        <p class="font-bang text-sm">${player.character}</p>
+                        <p class="text-xs font-bold ${player.role === 'Sheriff' ? 'text-blue-800' : 'text-transparent'}">
+                           ${player.role === 'Sheriff' ? 'Sheriff' : (isMe ? player.role : '???')}
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                         ${[...Array(player.maxHealth)].map((_, i) => `<div class="bullet ${i >= player.health ? 'opacity-20' : ''}"></div>`).join('')}
+                    </div>
+                </div>
+                <div class="mt-2 text-center text-xs">Hand (${player.hand.length})</div>
+                <div class="player-hand mt-1 flex flex-wrap gap-1 justify-center">
+                    ${isMe ? player.hand.map(card => `<div class="card text-xs flex flex-col justify-center items-center p-1" data-card-id="${card.id}">
+                        <span class="font-bang">${card.name}</span>
+                    </div>`).join('') : ''}
+                </div>
+            `;
+            playersContainer.appendChild(playerDiv);
         });
 
-        async function onCardClick(card) {
-            const myPlayer = gameState.players[userId];
-            const isMyTurn = gameState.turnOrder[gameState.currentTurnIndex] === userId;
-            if (!isMyTurn || myPlayer.turnPhase !== 'PLAY') {
-                console.log("Not your turn or not in PLAY phase.");
-                return;
-            }
-            
-            const cardName = card.name;
-            const action = { type: 'PLAY_CARD', cardId: card.id };
+        // Add event listeners after rendering
+        document.querySelectorAll('.card').forEach(cardEl => cardEl.addEventListener('click', onCardClick));
+        document.querySelectorAll('.player-area').forEach(playerEl => playerEl.addEventListener('click', onPlayerClick));
+    }
+    
+    async function updateGameState(updates) {
+        const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, currentGameId);
+        await updateDoc(gameRef, updates);
+    }
 
-            // Determine if a target is needed
-            if (['Bang!', 'Panic!', 'Cat Balou', 'Jail', 'Duel'].includes(cardName)) {
-                // Simplified target logic. A real implementation needs range checks.
-                const targets = gameState.turnOrder.filter(pid => pid !== userId && gameState.players[pid].status === 'active');
-                showTargetModal(cardName, targets, (targetId) => {
-                    action.targetId = targetId;
-                    performAction({ gameId: currentGameId, action });
-                });
-            } else { // Cards that don't need targets
-                performAction({ gameId: currentGameId, action });
-            }
-        }
+    async function onCardClick(event) {
+        event.stopPropagation();
+        const currentTurnPlayerId = gameState.turnOrder[gameState.currentTurnIndex];
+        if (userId !== currentTurnPlayerId) return;
+
+        const cardId = event.currentTarget.dataset.cardId;
+        const player = gameState.players[userId];
+        const card = player.hand.find(c => c.id === cardId);
+
+        selectedCard = { card, player };
         
-        function showTargetModal(title, targets, callback) {
-            const modal = document.getElementById('target-modal');
-            document.getElementById('target-modal-title').textContent = `Select target for ${title}`;
-            const targetList = document.getElementById('target-player-list');
-            targetList.innerHTML = '';
-            
-            targets.forEach(pid => {
-                const player = gameState.players[pid];
-                const btn = document.createElement('button');
-                btn.className = 'bg-yellow-700 text-white p-4 rounded hover:bg-yellow-800';
-                btn.textContent = player.name;
-                btn.onclick = () => {
-                    modal.classList.add('hidden');
-                    callback(pid);
-                };
-                targetList.appendChild(btn);
-            });
-            modal.classList.remove('hidden');
+        if (card.name === 'Bang!') {
+             showInfoModal('Bang! Selected. Now click on a target player.');
+             document.querySelectorAll('.player-area').forEach(p => p.classList.add('targetable'));
+        } else {
+             await playCard(card, player);
+        }
+    }
+    
+    async function onPlayerClick(event) {
+        const targetId = event.currentTarget.dataset.playerId;
+        
+        if (selectedCard && selectedCard.card.name === 'Bang!' && targetId !== selectedCard.player.id) {
+            await playCard(selectedCard.card, selectedCard.player, gameState.players[targetId]);
+            document.querySelectorAll('.player-area').forEach(p => p.classList.remove('targetable'));
+        }
+    }
+
+    async function playCard(card, player, target = null) {
+        let newGameState = { ...gameState };
+        let playerState = { ...player };
+        
+        playerState.hand = playerState.hand.filter(c => c.id !== card.id);
+        newGameState.discardPile = [...newGameState.discardPile, card];
+        
+        if (card.name === 'Bang!' && target) {
+            newGameState.players[target.id].health--;
+        } else if (card.name === 'Beer') {
+            playerState.health = Math.min(playerState.maxHealth, playerState.health + 1);
+        } else if (card.name === 'Stagecoach') {
+            for(let i = 0; i < 2; i++) playerState.hand.push(newGameState.deck.pop());
         }
 
-        document.getElementById('end-turn-btn').addEventListener('click', () => {
-            const myPlayer = gameState.players[userId];
-            if (myPlayer.hand.length > myPlayer.health) {
-                showInfoModal(`You must discard down to ${myPlayer.health} cards.`);
-                return;
-            }
-            performAction({ gameId: currentGameId, action: { type: 'END_TURN' }});
+        newGameState.players[player.id] = playerState;
+        selectedCard = null;
+
+        await updateGameState({
+            players: newGameState.players,
+            deck: newGameState.deck,
+            discardPile: newGameState.discardPile
         });
+    }
+
+    document.getElementById('draw-cards-btn').addEventListener('click', async () => {
+        const currentTurnPlayerId = gameState.turnOrder[gameState.currentTurnIndex];
+        if (userId !== currentTurnPlayerId) return;
+
+        let newDeck = [...gameState.deck];
+        let newPlayer = { ...gameState.players[userId] };
+        for(let i=0; i<2; i++) {
+             if (newDeck.length === 0) { // Reshuffle discard pile if deck is empty
+                newDeck = shuffle([...gameState.discardPile]);
+                await updateGameState({ discardPile: [] });
+             }
+             if(newDeck.length > 0) newPlayer.hand.push(newDeck.pop());
+        }
+
+        await updateGameState({
+            [`players.${userId}.hand`]: newPlayer.hand,
+            deck: newDeck
+        });
+    });
+
+    document.getElementById('end-turn-btn').addEventListener('click', async () => {
+        const currentTurnPlayerId = gameState.turnOrder[gameState.currentTurnIndex];
+        if (userId !== currentTurnPlayerId) return;
         
-        // --- GAME DATA DEFINITIONS ---
-        // This data can also be stored in Firestore for easier management
-        const ALL_CHARACTERS = {
-            'bart_cassidy': { name: 'Bart Cassidy', health: 4, ability: 'Each time he is hit, he draws a card from the deck.' },
-            'black_jack': { name: 'Black Jack', health: 4, ability: 'During phase 1 of his turn, he must show the second card he draws. If it is a Heart or Diamond, he draws one additional card.' },
-            'calamity_janet': { name: 'Calamity Janet', health: 4, ability: 'She can use Bang! cards as Missed! cards and vice-versa.' },
-            'el_gringo': { name: 'El Gringo', health: 3, ability: 'Each time he is hit by a player, he draws a card from the hand of that player.' },
-            'jourdonnais': { name: 'Jourdonnais', health: 4, ability: 'He has a Barrel in play at all times.' },
-            'kit_carlson': { name: 'Kit Carlson', health: 4, ability: 'During phase 1 of his turn, he looks at the top three cards of the deck, chooses 2 to draw, and puts the other one back on top of the deck.' },
-            'paul_regret': { name: 'Paul Regret', health: 3, ability: 'He has a Mustang in play at all times.' },
-            'pedro_ramirez': { name: 'Pedro Ramirez', health: 4, ability: 'During the first phase of his turn, he may choose to draw the first card from the top of the discard pile or from the deck.' },
-            'rose_doolan': { name: 'Rose Doolan', health: 4, ability: 'She has a Scope in play at all times.' },
-            'sid_ketchum': { name: 'Sid Ketchum', health: 4, ability: 'At any time, he may discard 2 cards from his hand to regain one life point.' },
-            'slab_the_killer': { name: 'Slab the Killer', health: 4, ability: 'Players trying to cancel his Bang! cards need to play 2 Missed!.' },
-            'suzy_lafayette': { name: 'Suzy Lafayette', health: 4, ability: 'As soon as she has no cards in her hand, she draws a card from the deck.' },
-            'vulture_sam': { name: 'Vulture Sam', health: 4, ability: 'Whenever a player is eliminated from the game, Sam takes all the cards that player had in his hand and in play.' },
-            'willy_the_kid': { name: 'Willy the Kid', health: 4, ability: 'He can play any number of Bang! cards during his turn.' }
-        };
+        const nextTurnIndex = (gameState.currentTurnIndex + 1) % gameState.turnOrder.length;
+        await updateGameState({ currentTurnIndex: nextTurnIndex });
+    });
 
-        const ALL_CARDS = {
-            'Bang!': { count: 25, color: 'brown' }, 'Missed!': { count: 12, color: 'brown' }, 'Beer': { count: 6, color: 'brown' }, 'Panic!': { count: 4, color: 'brown' },
-            'Cat Balou': { count: 4, color: 'brown' }, 'Stagecoach': { count: 2, color: 'brown' }, 'Wells Fargo': { count: 1, color: 'brown' }, 'Gatling': { count: 1, color: 'brown' },
-            'Indians!': { count: 2, color: 'brown' }, 'Duel': { count: 3, color: 'brown' }, 'Saloon': { count: 1, color: 'brown' }, 'Schofield': { count: 3, color: 'blue' },
-            'Remington': { count: 1, color: 'blue' }, 'Rev. Carabine': { count: 1, color: 'blue' }, 'Winchester': { count: 1, color: 'blue' }, 'Volcanic': { count: 2, color: 'blue' },
-            'Scope': { count: 1, color: 'blue' }, 'Mustang': { count: 2, color: 'blue' }, 'Barrel': { count: 2, color: 'blue' }, 'Jail': { count: 3, color: 'blue' },
-            'Dynamite': { count: 1, color: 'blue' },
-        };
-
-    </script>
+    // --- GAME DATA ---
+    const ROLES = {
+        4: ['Sheriff', 'Renegade', 'Outlaw', 'Outlaw'],
+        5: ['Sheriff', 'Renegade', 'Outlaw', 'Outlaw', 'Deputy'],
+        6: ['Sheriff', 'Renegade', 'Outlaw', 'Outlaw', 'Outlaw', 'Deputy'],
+        7: ['Sheriff', 'Renegade', 'Outlaw', 'Outlaw', 'Outlaw', 'Deputy', 'Deputy'],
+    };
+    const ALL_CHARACTERS = {
+        'bart_cassidy': { name: 'Bart Cassidy', health: 4 }, 'black_jack': { name: 'Black Jack', health: 4 },
+        'calamity_janet': { name: 'Calamity Janet', health: 4 }, 'el_gringo': { name: 'El Gringo', health: 3 },
+        'jourdonnais': { name: 'Jourdonnais', health: 4 }, 'kit_carlson': { name: 'Kit Carlson', health: 4 },
+        'paul_regret': { name: 'Paul Regret', health: 3 }, 'pedro_ramirez': { name: 'Pedro Ramirez', health: 4 },
+        'rose_doolan': { name: 'Rose Doolan', health: 4 }, 'sid_ketchum': { name: 'Sid Ketchum', health: 4 },
+        'slab_the_killer': { name: 'Slab the Killer', health: 4 }, 'suzy_lafayette': { name: 'Suzy Lafayette', health: 4 },
+        'vulture_sam': { name: 'Vulture Sam', health: 4 }, 'willy_the_kid': { name: 'Willy the Kid', health: 4 }
+    };
+    const ALL_CARDS = {
+        'Bang!': { count: 25 }, 'Missed!': { count: 12 }, 'Beer': { count: 6 }, 'Panic!': { count: 4 },
+        'Cat Balou': { count: 4 }, 'Stagecoach': { count: 2 }, 'Wells Fargo': { count: 1 }, 'Gatling': { count: 1 },
+        'Indians!': { count: 2 }, 'Duel': { count: 3 }, 'Saloon': { count: 1 }, 'Schofield': { count: 3 },
+        'Remington': { count: 1 }, 'Rev. Carabine': { count: 1 }, 'Winchester': { count: 1 }, 'Volcanic': { count: 2 },
+        'Scope': { count: 1 }, 'Mustang': { count: 2 }, 'Barrel': { count: 2 }, 'Jail': { count: 3 }, 'Dynamite': { count: 1 },
+    };
+</script>
 </body>
 </html>
 
