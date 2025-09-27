@@ -129,9 +129,25 @@
     import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // --- FIREBASE CONFIG ---
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIza...", authDomain: "...", projectId: "..." };
+    // IMPORTANT: Replace this with your own Firebase project configuration!
+    // 1. Go to https://firebase.google.com/ and create a new project.
+    // 2. In your project, go to Project settings > General.
+    // 3. Under "Your apps", click the web icon (</>) to create a new web app.
+    // 4. Copy the firebaseConfig object here.
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    // --- Initialize Firebase ---
+    // Do not change the line below, it's for a specific environment.
+    const finalFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-bang-app';
-    const app = initializeApp(firebaseConfig);
+    const app = initializeApp(finalFirebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
@@ -185,12 +201,19 @@
             joinGameBtn.disabled = false;
             joinGameBtn.textContent = 'Join / Create Game';
         } else {
-            signInAnonymously(auth).catch((error) => console.error("Anonymous sign-in failed:", error));
+            signInAnonymously(auth).catch((error) => {
+                console.error("Anonymous sign-in failed:", error);
+                showInfoModal("Could not connect to the server. Please check your Firebase configuration and security rules.");
+            });
         }
     });
 
     // --- LOBBY LOGIC ---
     joinGameBtn.addEventListener('click', async () => {
+        if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+            showInfoModal("Firebase is not configured. Please edit the HTML file and add your project's firebaseConfig.");
+            return;
+        }
         const playerName = playerNameInput.value.trim();
         if (!playerName) {
             showInfoModal("Please enter a name!");
