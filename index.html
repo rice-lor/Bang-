@@ -76,7 +76,7 @@
                 <label for="player-name-input" class="block mb-2">Your Name:</label>
                 <input type="text" id="player-name-input" class="p-2 rounded w-full border-2 border-yellow-700 bg-beige" placeholder="E.g., Cactus Jack">
             </div>
-            <button id="join-game-btn" class="bg-green-800 text-white font-bold py-2 px-4 rounded hover:bg-green-900 transition-colors w-full disabled:opacity-50" disabled>Authenticating...</button>
+            <button id="join-game-btn" class="bg-green-800 text-white font-bold py-2 px-4 rounded hover:bg-green-900 transition-colors w-full">Join / Create Game</button>
         </div>
         
         <div id="lobby-players-container" class="mt-8 max-w-md mx-auto hidden">
@@ -125,34 +125,22 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // --- FIREBASE CONFIG ---
-    // IMPORTANT: Replace this with your own Firebase project configuration!
-    // 1. Go to https://firebase.google.com/ and create a new project.
-    // 2. In your project, go to Project settings > General.
-    // 3. Under "Your apps", click the web icon (</>) to create a new web app.
-    // 4. Copy the firebaseConfig object here.
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT_ID.appspot.com",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
+    // This will be automatically provided in the environment.
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+        apiKey: "FALLBACK_API_KEY", // Fallback for local testing
+        // You can add your fallback config here if you want to test locally
     };
-
+    
     // --- Initialize Firebase ---
-    // Do not change the line below, it's for a specific environment.
-    const finalFirebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-bang-app';
-    const app = initializeApp(finalFirebaseConfig);
+    const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
 
     // --- GLOBAL STATE ---
-    let userId;
+    let playerId = null;
     let currentGameId = null;
     let gameState = {};
     let unsubscribeGame = null;
@@ -182,7 +170,7 @@
         roleModal.classList.add('hidden');
         if (currentGameId) {
              const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, currentGameId);
-             await updateDoc(gameRef, { [`players.${userId}.roleShown`]: true });
+             await updateDoc(gameRef, { [`players.${playerId}.roleShown`]: true });
         }
     });
     
@@ -194,30 +182,17 @@
         return array;
     }
 
-    // --- AUTHENTICATION ---
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            userId = user.uid;
-            joinGameBtn.disabled = false;
-            joinGameBtn.textContent = 'Join / Create Game';
-        } else {
-            signInAnonymously(auth).catch((error) => {
-                console.error("Anonymous sign-in failed:", error);
-                showInfoModal("Could not connect to the server. Please check your Firebase configuration and security rules.");
-            });
-        }
-    });
-
     // --- LOBBY LOGIC ---
     joinGameBtn.addEventListener('click', async () => {
-        if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-            showInfoModal("Firebase is not configured. Please edit the HTML file and add your project's firebaseConfig.");
-            return;
-        }
         const playerName = playerNameInput.value.trim();
         if (!playerName) {
             showInfoModal("Please enter a name!");
             return;
+        }
+        
+        // Generate a unique ID for this player session
+        if (!playerId) {
+            playerId = `player_${crypto.randomUUID()}`;
         }
 
         let gameId = gameIdInput.value.trim() || `game-${Math.random().toString(36).substr(2, 6)}`;
@@ -230,8 +205,8 @@
                 if (!gameDoc.exists()) {
                     const newGame = {
                         status: 'lobby',
-                        hostId: userId,
-                        players: { [userId]: { name: playerName } },
+                        hostId: playerId,
+                        players: { [playerId]: { name: playerName } },
                     };
                     transaction.set(gameRef, newGame);
                 } else {
@@ -239,7 +214,7 @@
                     if (gameData.status !== 'lobby') throw new Error("This game has already started!");
                     if (Object.keys(gameData.players).length >= 7) throw new Error("This game is full!");
                     
-                    const updatePayload = { [`players.${userId}`]: { name: playerName } };
+                    const updatePayload = { [`players.${playerId}`]: { name: playerName } };
                     transaction.update(gameRef, updatePayload);
                 }
             });
@@ -285,7 +260,7 @@
             lobbyPlayerList.appendChild(li);
         });
 
-        if (userId === state.hostId) {
+        if (playerId === state.hostId) {
             startGameBtn.classList.remove('hidden');
             const numPlayers = Object.keys(state.players).length;
             if (numPlayers >= 4) {
@@ -352,7 +327,7 @@
         lobbyContainer.classList.add('hidden');
         gameContainer.classList.remove('hidden');
 
-        const me = state.players[userId];
+        const me = state.players[playerId];
         if (me && !me.roleShown) {
              const roleData = {
                 Sheriff: { color: 'blue', desc: 'Kill all Outlaws and the Renegade.'},
@@ -369,7 +344,7 @@
         playersContainer.innerHTML = '';
         state.turnOrder.forEach((pid) => {
             const player = state.players[pid];
-            const isMe = pid === userId;
+            const isMe = pid === playerId;
             const isCurrentTurn = state.turnOrder[state.currentTurnIndex] === pid;
             
             const playerDiv = document.createElement('div');
@@ -412,10 +387,10 @@
     async function onCardClick(event) {
         event.stopPropagation();
         const currentTurnPlayerId = gameState.turnOrder[gameState.currentTurnIndex];
-        if (userId !== currentTurnPlayerId) return;
+        if (playerId !== currentTurnPlayerId) return;
 
         const cardId = event.currentTarget.dataset.cardId;
-        const player = gameState.players[userId];
+        const player = gameState.players[playerId];
         const card = player.hand.find(c => c.id === cardId);
 
         selectedCard = { card, player };
@@ -464,10 +439,10 @@
 
     document.getElementById('draw-cards-btn').addEventListener('click', async () => {
         const currentTurnPlayerId = gameState.turnOrder[gameState.currentTurnIndex];
-        if (userId !== currentTurnPlayerId) return;
+        if (playerId !== currentTurnPlayerId) return;
 
         let newDeck = [...gameState.deck];
-        let newPlayer = { ...gameState.players[userId] };
+        let newPlayer = { ...gameState.players[playerId] };
         for(let i=0; i<2; i++) {
              if (newDeck.length === 0) { // Reshuffle discard pile if deck is empty
                 newDeck = shuffle([...gameState.discardPile]);
@@ -477,14 +452,14 @@
         }
 
         await updateGameState({
-            [`players.${userId}.hand`]: newPlayer.hand,
+            [`players.${playerId}.hand`]: newPlayer.hand,
             deck: newDeck
         });
     });
 
     document.getElementById('end-turn-btn').addEventListener('click', async () => {
         const currentTurnPlayerId = gameState.turnOrder[gameState.currentTurnIndex];
-        if (userId !== currentTurnPlayerId) return;
+        if (playerId !== currentTurnPlayerId) return;
         
         const nextTurnIndex = (gameState.currentTurnIndex + 1) % gameState.turnOrder.length;
         await updateGameState({ currentTurnIndex: nextTurnIndex });
