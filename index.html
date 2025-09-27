@@ -36,6 +36,7 @@
             border-radius: 10px;
             padding: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.5) inset;
+            position: relative;
         }
         .player-area.active-player {
             border-color: #FFD700; /* Gold */
@@ -69,12 +70,11 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
             z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .modal-content {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             background-color: #f5deb3;
             border: 5px solid #8B4513;
             border-radius: 15px;
@@ -82,6 +82,8 @@
             z-index: 60;
             box-shadow: 0 0 30px rgba(0,0,0,0.7);
             text-align: center;
+            max-width: 90%;
+            width: 500px;
         }
     </style>
 </head>
@@ -122,6 +124,7 @@
                         <h2 id="player-name" class="text-2xl font-bold">Player Name</h2>
                         <p id="player-character" class="text-lg font-bang">Character Name</p>
                         <p id="player-role" class="italic text-sm">Role: Sheriff</p>
+                        <p id="turn-phase-indicator" class="font-bold text-yellow-200 mt-1"></p>
                     </div>
                     <div id="player-health" class="flex items-center space-x-1">
                         <!-- Bullets for health -->
@@ -154,7 +157,7 @@
                 <label for="player-name-input" class="block mb-2">Your Name:</label>
                 <input type="text" id="player-name-input" class="p-2 rounded w-full border-2 border-yellow-700 bg-beige" placeholder="E.g., Cactus Jack">
             </div>
-            <button id="join-game-btn" class="bg-green-800 text-white font-bold py-2 px-4 rounded hover:bg-green-900 transition-colors w-full">Join / Create Game</button>
+            <button id="join-game-btn" class="bg-green-800 text-white font-bold py-2 px-4 rounded hover:bg-green-900 transition-colors w-full disabled:opacity-50" disabled>Authenticating...</button>
         </div>
         
         <div id="lobby-players" class="mt-8 max-w-md mx-auto">
@@ -166,7 +169,7 @@
         </div>
     </div>
     
-    <!-- Modal for showing role -->
+    <!-- Modals -->
     <div id="role-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <h2 class="text-3xl font-bang mb-4">Your Role is...</h2>
@@ -178,14 +181,18 @@
         </div>
     </div>
 
-    <!-- Target Selection Modal -->
     <div id="target-modal" class="modal-backdrop hidden">
-        <div id="target-modal-content" class="modal-content">
+        <div class="modal-content">
             <h2 id="target-modal-title" class="text-2xl font-bang mb-4">Select a Target</h2>
-            <div id="target-player-list" class="grid grid-cols-2 gap-4">
-                <!-- Target player buttons go here -->
-            </div>
+            <div id="target-player-list" class="grid grid-cols-2 gap-4"></div>
             <button id="cancel-target-btn" class="mt-6 bg-gray-500 text-white font-bold py-2 px-4 rounded hover:bg-gray-600">Cancel</button>
+        </div>
+    </div>
+
+    <div id="info-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <p id="info-modal-text" class="text-lg"></p>
+            <button id="close-info-modal-btn" class="mt-6 bg-yellow-700 text-white font-bold py-2 px-4 rounded hover:bg-yellow-800">OK</button>
         </div>
     </div>
 
@@ -194,7 +201,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, arrayUnion, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-functions.js";
 
         // Firebase Config (will be provided by the environment)
@@ -205,7 +212,14 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const functions = getFunctions(app);
         
+        // --- Cloud Function Stubs ---
+        // These functions will call our secure backend.
+        const startGame = httpsCallable(functions, 'startGame');
+        const performAction = httpsCallable(functions, 'performAction');
+
+
         // Game state variables
         let userId;
         let currentGameId = null;
@@ -221,6 +235,22 @@
         const lobbyPlayerList = document.getElementById('lobby-player-list');
         const startGameBtn = document.getElementById('start-game-btn');
         const userIdDisplay = document.getElementById('user-id-display');
+        const deckPile = document.getElementById('deck-pile');
+
+        // --- GENERAL UI & MODALS ---
+        function showInfoModal(message) {
+            document.getElementById('info-modal-text').textContent = message;
+            document.getElementById('info-modal').classList.remove('hidden');
+        }
+        document.getElementById('close-info-modal-btn').addEventListener('click', () => {
+            document.getElementById('info-modal').classList.add('hidden');
+        });
+        document.getElementById('close-role-modal-btn').addEventListener('click', () => {
+            document.getElementById('role-modal').classList.add('hidden');
+        });
+         document.getElementById('cancel-target-btn').addEventListener('click', () => {
+            document.getElementById('target-modal').classList.add('hidden');
+        });
 
         // --- AUTHENTICATION ---
         onAuthStateChanged(auth, (user) => {
@@ -228,6 +258,8 @@
                 userId = user.uid;
                 userIdDisplay.textContent = userId;
                 console.log("Authenticated with user ID:", userId);
+                joinGameBtn.disabled = false;
+                joinGameBtn.textContent = 'Join / Create Game';
             } else {
                 signInAnonymously(auth).catch((error) => {
                     console.error("Anonymous sign-in failed:", error);
@@ -239,11 +271,7 @@
         joinGameBtn.addEventListener('click', async () => {
             const playerName = playerNameInput.value.trim();
             if (!playerName) {
-                alert("Please enter a name!");
-                return;
-            }
-            if (!userId) {
-                alert("Still authenticating, please wait a moment.");
+                showInfoModal("Please enter a name!");
                 return;
             }
 
@@ -259,33 +287,26 @@
                 const gameDoc = await getDoc(gameRef);
 
                 if (!gameDoc.exists()) {
-                    // Create new game
                     await createNewGame(gameRef, playerName);
                 } else {
-                    // Join existing game
                     const gameData = gameDoc.data();
                     if (gameData.status !== 'lobby') {
-                        alert('This game has already started!');
+                        showInfoModal('This game has already started!');
                         return;
                     }
                     if (Object.keys(gameData.players).length >= 7) {
-                        alert('This game is full!');
+                        showInfoModal('This game is full!');
                         return;
                     }
                     const updatePayload = {
-                        [`players.${userId}`]: {
-                            name: playerName,
-                            status: 'active'
-                        }
+                        [`players.${userId}`]: { name: playerName, status: 'active' }
                     };
                     await updateDoc(gameRef, updatePayload);
                 }
-                
                 subscribeToGame(currentGameId);
-
             } catch (error) {
                 console.error("Error joining game: ", error);
-                alert("Could not join game. See console for details.");
+                showInfoModal("Could not join game. See console for details.");
             }
         });
         
@@ -294,15 +315,11 @@
                 status: 'lobby',
                 hostId: userId,
                 players: {
-                    [userId]: {
-                        name: playerName,
-                        status: 'active' // active, eliminated
-                    }
+                    [userId]: { name: playerName, status: 'active' }
                 },
                 createdAt: new Date(),
             };
             await setDoc(gameRef, newGame);
-            console.log(`New game created with ID: ${gameRef.id}`);
         }
 
         function subscribeToGame(gameId) {
@@ -312,8 +329,7 @@
                     gameState = doc.data();
                     updateUI(gameState);
                 } else {
-                    console.log("Game document deleted or does not exist.");
-                    alert("The game has ended or could not be found.");
+                    showInfoModal("The game has ended or could not be found.");
                     resetToLobby();
                 }
             });
@@ -368,99 +384,18 @@
 
         startGameBtn.addEventListener('click', async () => {
              if (!currentGameId || userId !== gameState.hostId) return;
-             // Here we'd call a cloud function to set up the game securely.
-             // For this client-side version, we'll do setup here.
-             await setupGame();
+             startGameBtn.disabled = true;
+             startGameBtn.textContent = 'Starting...';
+             try {
+                await startGame({ gameId: currentGameId });
+                // The onSnapshot listener will handle the UI update
+             } catch (error) {
+                 console.error("Error starting game:", error);
+                 showInfoModal(`Error starting game: ${error.message}`);
+                 startGameBtn.disabled = false;
+                 startGameBtn.textContent = 'Start Game';
+             }
         });
-
-        // --- GAME SETUP ---
-        const ALL_CARDS = { /* Populated below */ };
-        const ALL_CHARACTERS = { /* Populated below */ };
-        const ROLES = {
-            4: ['Sheriff', 'Renegade', 'Outlaw', 'Outlaw'],
-            5: ['Sheriff', 'Renegade', 'Outlaw', 'Outlaw', 'Deputy'],
-            6: ['Sheriff', 'Renegade', 'Outlaw', 'Outlaw', 'Outlaw', 'Deputy'],
-            7: ['Sheriff', 'Renegade', 'Outlaw', 'Outlaw', 'Outlaw', 'Deputy', 'Deputy'],
-        };
-        
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        async function setupGame() {
-            const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, currentGameId);
-            const playerIds = Object.keys(gameState.players);
-            const numPlayers = playerIds.length;
-
-            if (numPlayers < 4) {
-                alert("Need at least 4 players to start.");
-                return;
-            }
-
-            // 1. Assign Roles
-            const rolesToAssign = shuffle([...ROLES[numPlayers]]);
-            const shuffledPlayerIds = shuffle([...playerIds]);
-            let sheriffId = null;
-
-            const updatedPlayers = {};
-            shuffledPlayerIds.forEach((pid, index) => {
-                const role = rolesToAssign[index];
-                if (role === 'Sheriff') sheriffId = pid;
-                updatedPlayers[pid] = {
-                    ...gameState.players[pid],
-                    role: role,
-                    character: null,
-                    ability: null,
-                    health: 0,
-                    maxHealth: 0,
-                    hand: [],
-                    inPlay: []
-                };
-            });
-            
-            // 2. Assign Characters
-            const charactersToAssign = shuffle(Object.values(ALL_CHARACTERS)).slice(0, numPlayers);
-            shuffledPlayerIds.forEach((pid, index) => {
-                const char = charactersToAssign[index];
-                updatedPlayers[pid].character = char.name;
-                updatedPlayers[pid].ability = char.ability;
-                updatedPlayers[pid].maxHealth = char.health + (updatedPlayers[pid].role === 'Sheriff' ? 1 : 0);
-                updatedPlayers[pid].health = updatedPlayers[pid].maxHealth;
-            });
-            
-            // 3. Create and shuffle deck
-            let deck = [];
-            for (const [cardName, cardData] of Object.entries(ALL_CARDS)) {
-                for (let i = 0; i < cardData.count; i++) {
-                    deck.push({ id: `${cardName}_${i}`, name: cardName });
-                }
-            }
-            deck = shuffle(deck);
-
-            // 4. Deal initial cards
-            Object.values(updatedPlayers).forEach(player => {
-                for(let i=0; i < player.health; i++) {
-                    player.hand.push(deck.pop());
-                }
-            });
-
-            // 5. Finalize game state for update
-            const newGameState = {
-                status: 'playing',
-                players: updatedPlayers,
-                turnOrder: shuffledPlayerIds,
-                currentTurnIndex: shuffledPlayerIds.indexOf(sheriffId),
-                deck: deck,
-                discardPile: [],
-                log: [`The game has begun! ${updatedPlayers[sheriffId].name} is the Sheriff.`]
-            };
-            
-            await setDoc(gameRef, newGameState, { merge: true });
-        }
 
         // --- GAME UI RENDERING ---
         function showGame(state) {
@@ -468,31 +403,28 @@
             gameContainer.classList.remove('hidden');
 
             const myPlayer = state.players[userId];
-            if (!myPlayer) {
-                console.error("Current user not in game state players object!");
-                return;
-            }
+            if (!myPlayer) return;
             
-            // Show role modal if not seen yet
             if (!myPlayer.roleShown) {
                 showRoleModal(myPlayer.role);
-                 // We should ideally set roleShown in Firestore, but this works for a demo
-                myPlayer.roleShown = true; 
+                // The backend should handle setting this flag
+                performAction({ gameId: currentGameId, action: { type: 'ACKNOWLEDGE_ROLE' }});
             }
 
+            const isMyTurn = state.turnOrder[state.currentTurnIndex] === userId;
+
             // Render current player
-            document.getElementById('player-name').textContent = myPlayer.name + (userId === state.turnOrder[state.currentTurnIndex] ? ' (Your Turn)' : '');
+            document.getElementById('player-name').textContent = myPlayer.name + (isMyTurn ? ' (Your Turn)' : '');
             document.getElementById('player-character').textContent = myPlayer.character;
-            document.getElementById('player-role').textContent = `Role: ${myPlayer.role}`;
+            document.getElementById('player-role').textContent = `Role: ${myPlayer.role === 'Sheriff' ? 'Sheriff' : '???'}`;
+            document.getElementById('turn-phase-indicator').textContent = isMyTurn ? `Phase: ${myPlayer.turnPhase}` : '';
             
             const healthContainer = document.getElementById('player-health');
             healthContainer.innerHTML = '';
             for(let i=0; i < myPlayer.maxHealth; i++) {
                 const bulletDiv = document.createElement('div');
                 bulletDiv.className = 'bullet';
-                if (i >= myPlayer.health) {
-                    bulletDiv.style.opacity = '0.2';
-                }
+                if (i >= myPlayer.health) bulletDiv.style.opacity = '0.2';
                 healthContainer.appendChild(bulletDiv);
             }
 
@@ -508,17 +440,13 @@
             // Render other players
             const otherPlayersContainer = document.getElementById('other-players-container');
             otherPlayersContainer.innerHTML = '';
-            const myIndex = state.turnOrder.indexOf(userId);
-            
-            // Simple display order, not table position
             state.turnOrder.forEach((pid, index) => {
                 if (pid === userId) return;
                 const player = state.players[pid];
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'player-area';
-                 if (index === state.currentTurnIndex) {
-                    playerDiv.classList.add('active-player');
-                }
+                if (index === state.currentTurnIndex) playerDiv.classList.add('active-player');
+
                 playerDiv.innerHTML = `
                     <h3 class="font-bold text-lg">${player.name}</h3>
                     <p class="font-bang text-sm">${player.character}</p>
@@ -526,27 +454,25 @@
                     <div class="flex mt-1">
                         ${[...Array(player.maxHealth)].map((_, i) => `<div class="bullet ${i >= player.health ? 'opacity-20' : ''}"></div>`).join('')}
                     </div>
-                    ${player.status === 'eliminated' ? `<div class="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-red-500 text-3xl font-bold">OUT</div><p class="text-center text-white">${player.role}</p>` : ''}
+                    ${player.role === 'Sheriff' ? '<p class="text-xs text-blue-800 font-bold">Sheriff</p>' : ''}
+                    ${player.status === 'eliminated' ? `<div class="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center text-red-500 text-3xl font-bold transform -rotate-12">ELIMINATED</div><p class="text-center font-bold mt-2">${player.role}</p>` : ''}
                 `;
                 otherPlayersContainer.appendChild(playerDiv);
             });
             
-            // Update deck and discard
             document.getElementById('deck-count').textContent = `${state.deck.length} cards`;
             const discardPileEl = document.getElementById('discard-pile');
             discardPileEl.innerHTML = '';
             if (state.discardPile.length > 0) {
-                const topCard = state.discardPile[state.discardPile.length-1];
+                const topCard = state.discardPile[state.discardPile.length - 1];
                 discardPileEl.appendChild(createCardElement(topCard));
             }
             
-            // Update game log
             const logEl = document.getElementById('game-log');
             logEl.innerHTML = state.log.join('<br>');
             logEl.scrollTop = logEl.scrollHeight;
 
-            // Enable/disable end turn button
-            document.getElementById('end-turn-btn').disabled = (state.turnOrder[state.currentTurnIndex] !== userId);
+            document.getElementById('end-turn-btn').disabled = !isMyTurn || myPlayer.turnPhase !== 'PLAY';
         }
 
         function createCardElement(card) {
@@ -554,17 +480,14 @@
             const div = document.createElement('div');
             div.className = 'card flex flex-col justify-between p-1 cursor-pointer';
             div.innerHTML = `
-                <div class="text-left text-sm font-bold">${cardData.value || ''}</div>
+                <div class="text-left text-sm font-bold">${card.suit || ''} ${card.value || ''}</div>
                 <div class="text-center font-bang text-md">${card.name}</div>
-                <div class="text-right text-sm font-bold">${cardData.suit || ''}</div>
+                <div class="text-right text-sm font-bold">${card.suit || ''} ${card.value || ''}</div>
             `;
-            if (cardData.color === 'blue') {
-                div.style.borderColor = '#0000FF';
-            }
+            if (cardData.color === 'blue') div.style.borderColor = '#0000FF';
             return div;
         }
         
-        // --- MODAL LOGIC ---
         function showRoleModal(role) {
             const roleData = {
                 Sheriff: { color: 'blue', desc: 'Kill all Outlaws and the Renegade.'},
@@ -577,56 +500,40 @@
             document.getElementById('role-reveal-card').style.borderColor = roleData[role].color;
             document.getElementById('role-modal').classList.remove('hidden');
         }
-
-        document.getElementById('close-role-modal-btn').addEventListener('click', () => {
-            document.getElementById('role-modal').classList.add('hidden');
+        
+        // --- GAME ACTIONS (Client-side triggers) ---
+        deckPile.addEventListener('click', () => {
+            const myPlayer = gameState.players[userId];
+            const isMyTurn = gameState.turnOrder[gameState.currentTurnIndex] === userId;
+            if (isMyTurn && myPlayer.turnPhase === 'DRAW') {
+                performAction({ gameId: currentGameId, action: { type: 'DRAW_CARDS' }});
+            }
         });
-        
-        // --- GAME ACTIONS ---
-        
+
         async function onCardClick(card) {
-            const myTurn = gameState.turnOrder[gameState.currentTurnIndex] === userId;
-            if(!myTurn) {
-                console.log("Not your turn!");
+            const myPlayer = gameState.players[userId];
+            const isMyTurn = gameState.turnOrder[gameState.currentTurnIndex] === userId;
+            if (!isMyTurn || myPlayer.turnPhase !== 'PLAY') {
+                console.log("Not your turn or not in PLAY phase.");
                 return;
             }
             
             const cardName = card.name;
-            console.log(`Clicked on ${cardName}`);
+            const action = { type: 'PLAY_CARD', cardId: card.id };
 
-            // This is a simplified action handler. A real one would be much more complex.
-            if (cardName === 'Bang!') {
-                const targets = getValidTargets('Bang!');
-                if (targets.length > 0) {
-                    showTargetModal('Bang!', targets, (targetId) => {
-                        playCard(card, targetId);
-                    });
-                } else {
-                    alert('No one is in range!');
-                }
-            } else if (cardName === 'Beer') {
-                const me = gameState.players[userId];
-                if (me.health < me.maxHealth) {
-                    playCard(card, userId);
-                } else {
-                    alert("You are already at max health!");
-                }
-            } else {
-                alert(`Playing card ${cardName} is not implemented yet.`);
+            // Determine if a target is needed
+            if (['Bang!', 'Panic!', 'Cat Balou', 'Jail', 'Duel'].includes(cardName)) {
+                // Simplified target logic. A real implementation needs range checks.
+                const targets = gameState.turnOrder.filter(pid => pid !== userId && gameState.players[pid].status === 'active');
+                showTargetModal(cardName, targets, (targetId) => {
+                    action.targetId = targetId;
+                    performAction({ gameId: currentGameId, action });
+                });
+            } else { // Cards that don't need targets
+                performAction({ gameId: currentGameId, action });
             }
         }
         
-        function getValidTargets(cardName) {
-            // Very simplified range calculation
-            // In Bang, this depends on distance, scopes, mustangs, etc.
-            const playerIds = gameState.turnOrder.filter(pid => pid !== userId && gameState.players[pid].status === 'active');
-            if (cardName === 'Bang!') {
-                // For now, assume everyone is in range of 1
-                return playerIds;
-            }
-            return [];
-        }
-
         function showTargetModal(title, targets, callback) {
             const modal = document.getElementById('target-modal');
             document.getElementById('target-modal-title').textContent = `Select target for ${title}`;
@@ -647,64 +554,18 @@
             modal.classList.remove('hidden');
         }
 
-        document.getElementById('cancel-target-btn').addEventListener('click', () => {
-            document.getElementById('target-modal').classList.add('hidden');
-        });
-
-        async function playCard(card, targetId) {
-             console.log(`Playing ${card.name} on ${targetId}`);
-             const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, currentGameId);
-
-             // IMPORTANT: This should be a transaction or a cloud function to be safe!
-             // This client-side logic is insecure and prone to race conditions.
-             const me = gameState.players[userId];
-             const target = gameState.players[targetId];
-
-             // 1. Remove card from hand
-             const newHand = me.hand.filter(c => c.id !== card.id);
-             
-             // 2. Add card to discard pile
-             const newDiscard = [...gameState.discardPile, card];
-
-             // 3. Apply card effect
-             let logMessage = `${me.name} played a ${card.name}`;
-             const updates = {};
-             
-             if (card.name === 'Bang!') {
-                target.health -= 1;
-                logMessage += ` on ${target.name}.`;
-             } else if (card.name === 'Beer') {
-                me.health = Math.min(me.maxHealth, me.health + 1);
-                logMessage += ` and recovered 1 health.`;
-             }
-             
-             updates[`players.${userId}.hand`] = newHand;
-             updates[`players.${userId}.health`] = me.health;
-             updates[`players.${targetId}.health`] = target.health;
-             updates['discardPile'] = newDiscard;
-             updates['log'] = arrayUnion(logMessage);
-
-             await updateDoc(gameRef, updates);
-        }
-
-        document.getElementById('end-turn-btn').addEventListener('click', async () => {
-            const gameRef = doc(db, `artifacts/${appId}/public/data/bang_games`, currentGameId);
-            const nextIndex = (gameState.currentTurnIndex + 1) % gameState.turnOrder.length;
-            
-            // Skip eliminated players
-            let finalIndex = nextIndex;
-            while(gameState.players[gameState.turnOrder[finalIndex]].status === 'eliminated') {
-                finalIndex = (finalIndex + 1) % gameState.turnOrder.length;
+        document.getElementById('end-turn-btn').addEventListener('click', () => {
+            const myPlayer = gameState.players[userId];
+            if (myPlayer.hand.length > myPlayer.health) {
+                showInfoModal(`You must discard down to ${myPlayer.health} cards.`);
+                return;
             }
-
-            await updateDoc(gameRef, {
-                currentTurnIndex: finalIndex,
-                log: arrayUnion(`${gameState.players[userId].name} ended their turn. It's now ${gameState.players[gameState.turnOrder[finalIndex]].name}'s turn.`)
-            });
+            performAction({ gameId: currentGameId, action: { type: 'END_TURN' }});
         });
         
         // --- GAME DATA DEFINITIONS ---
-        Object.assign(ALL_CHARACTERS, {
+        // This data can also be stored in Firestore for easier management
+        const ALL_CHARACTERS = {
             'bart_cassidy': { name: 'Bart Cassidy', health: 4, ability: 'Each time he is hit, he draws a card from the deck.' },
             'black_jack': { name: 'Black Jack', health: 4, ability: 'During phase 1 of his turn, he must show the second card he draws. If it is a Heart or Diamond, he draws one additional card.' },
             'calamity_janet': { name: 'Calamity Janet', health: 4, ability: 'She can use Bang! cards as Missed! cards and vice-versa.' },
@@ -719,32 +580,18 @@
             'suzy_lafayette': { name: 'Suzy Lafayette', health: 4, ability: 'As soon as she has no cards in her hand, she draws a card from the deck.' },
             'vulture_sam': { name: 'Vulture Sam', health: 4, ability: 'Whenever a player is eliminated from the game, Sam takes all the cards that player had in his hand and in play.' },
             'willy_the_kid': { name: 'Willy the Kid', health: 4, ability: 'He can play any number of Bang! cards during his turn.' }
-        });
+        };
 
-        Object.assign(ALL_CARDS, {
-            'Bang!': { count: 25, color: 'brown', effect: 'Hit one player in range.' },
-            'Missed!': { count: 12, color: 'brown', effect: 'Dodge a Bang!.' },
-            'Beer': { count: 6, color: 'brown', effect: 'Regain one life point.' },
-            'Panic!': { count: 4, color: 'brown', effect: 'Draw a card from a player at distance 1.' },
-            'Cat Balou': { count: 4, color: 'brown', effect: 'Force any player to discard a card.' },
-            'Stagecoach': { count: 2, color: 'brown', effect: 'Draw 2 cards.' },
-            'Wells Fargo': { count: 1, color: 'brown', effect: 'Draw 3 cards.' },
-            'Gatling': { count: 1, color: 'brown', effect: 'Hit all other players.' },
-            'Indians!': { count: 2, color: 'brown', effect: 'All other players must discard a Bang! or lose a life point.' },
-            'Duel': { count: 3, color: 'brown', effect: 'Challenge another player to a duel.' },
-            'Saloon': { count: 1, color: 'brown', effect: 'All players regain one life point.' },
-            'Schofield': { count: 3, color: 'blue', type: 'weapon', range: 2 },
-            'Remington': { count: 1, color: 'blue', type: 'weapon', range: 3 },
-            'Rev. Carabine': { count: 1, color: 'blue', type: 'weapon', range: 4 },
-            'Winchester': { count: 1, color: 'blue', type: 'weapon', range: 5 },
-            'Volcanic': { count: 2, color: 'blue', type: 'weapon', range: 1, ability: 'Can play any number of Bang! cards.' },
-            'Scope': { count: 1, color: 'blue', effect: 'See all players at a distance decreased by 1.' },
-            'Mustang': { count: 2, color: 'blue', effect: 'Other players see you at a distance increased by 1.' },
-            'Barrel': { count: 2, color: 'blue', effect: 'Draw on a Heart to cancel a Bang!.' },
-            'Jail': { count: 3, color: 'blue', effect: 'Put another player in jail.' },
-            'Dynamite': { count: 1, color: 'blue', effect: 'Pass it around, if it explodes on you, lose 3 life points.' },
-        });
+        const ALL_CARDS = {
+            'Bang!': { count: 25, color: 'brown' }, 'Missed!': { count: 12, color: 'brown' }, 'Beer': { count: 6, color: 'brown' }, 'Panic!': { count: 4, color: 'brown' },
+            'Cat Balou': { count: 4, color: 'brown' }, 'Stagecoach': { count: 2, color: 'brown' }, 'Wells Fargo': { count: 1, color: 'brown' }, 'Gatling': { count: 1, color: 'brown' },
+            'Indians!': { count: 2, color: 'brown' }, 'Duel': { count: 3, color: 'brown' }, 'Saloon': { count: 1, color: 'brown' }, 'Schofield': { count: 3, color: 'blue' },
+            'Remington': { count: 1, color: 'blue' }, 'Rev. Carabine': { count: 1, color: 'blue' }, 'Winchester': { count: 1, color: 'blue' }, 'Volcanic': { count: 2, color: 'blue' },
+            'Scope': { count: 1, color: 'blue' }, 'Mustang': { count: 2, color: 'blue' }, 'Barrel': { count: 2, color: 'blue' }, 'Jail': { count: 3, color: 'blue' },
+            'Dynamite': { count: 1, color: 'blue' },
+        };
 
     </script>
 </body>
 </html>
+
